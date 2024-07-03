@@ -123,10 +123,48 @@ print("Length of contract:"+str(len(aContract)))
 agent1.computeUtilityOfAContract(aContract)
 '''
 
-# very simple mediator
+class BruteForceMediator:
+
+    def __init__(self,constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min):
+        self.constraints_num = constraints_num
+        self.issues_num = issues_num
+        self.issue_value_max = issue_value_max
+        self.issue_value_min = issue_value_min
+        self.constraint_value_max = constraint_value_max
+        self.constraint_value_min = constraint_value_min
+
+    def mediate(self, agent1, agent2):
+        ####  単純な全探索 #####
+        # Brute Force mediator
+        # 全てのcontractポイントを計算(pythonの関数productを使って、全ての組み合わせを計算)
+        a_List = list(range(self.issue_value_min,self.issue_value_max))
+        all_contracts = product(a_List,repeat=self.issues_num) # -> iteratorを返す
+        #list(all_contract)をすると、iteratorを使い切ってしまう。listにしておくか、iteratorをそのまま使うかにしないといけません。
+        #この次に以下をやると空リストが返される
+        #print(list(all_contracts))  # => これは空のリストになる (iteratorが周り切っちゃったから)
+        max_nash = 0
+        max_nash_contract = []
+        for a_contract in all_contracts:
+            #print(a_contract)
+            agent1_utility = agent1.computeUtilityOfAContract(a_contract)
+            agent2_utility = agent2.computeUtilityOfAContract(a_contract)
+            a_nash = agent1_utility * agent2_utility
+            print("{:>20} : {:>20}".format(str(a_contract),str(a_nash)))
+            #print(str(a_contract)+":"+str(a_nash))
+            if max_nash < a_nash:
+                max_nash = a_nash
+                max_nash_contract = a_contract
+            #print("agent1_utility:"+str(agent1_utility))
+            #print("agent2_utility:"+str(agent2_utility))
+
+        print("Maximam Nash contract: "+str(max_nash_contract))
+        print("Maximam Nash value : "+str(max_nash))
+
+
+### 環境設定 ###
 from itertools import product
-constraints_num = 1000 # for each
-issues_num  = 3
+constraints_num = 10000 # for each
+issues_num  = 5
 issue_value_max = 10
 issue_value_min = 0
 constraint_value_max = 1000
@@ -134,32 +172,6 @@ constraint_value_min = 0
 agent1 = Agent(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
 agent2 = Agent(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
 
-# 2つのエージェントの効用を計算
-
-# 全てのcontractポイントを計算(pythonの関数productを使って、全ての組み合わせを計算)
-a_List = list(range(issue_value_min,issue_value_max+1))
-all_contracts = product(a_List,repeat=issues_num) # -> iteratorを返す
-#list(all_contract)をすると、iteratorを使い切ってしまう。listにしておくか、iteratorをそのまま使うかにしないといけません。
-#この次に以下をやると空リストが返される
-#print(list(all_contracts))  # => これは空のリストになる (iteratorが周り切っちゃったから)
-
-max_nash = 0
-max_nash_contract = []
-for a_contract in all_contracts:
-    #print(a_contract)
-    agent1_utility = agent1.computeUtilityOfAContract(a_contract)
-    agent2_utility = agent2.computeUtilityOfAContract(a_contract)
-    a_nash = agent1_utility * agent2_utility
-    print("{:>15} : {:>15}".format(str(a_contract),str(a_nash)))
-    #print(str(a_contract)+":"+str(a_nash))
-    if max_nash < a_nash:
-        max_nash = a_nash
-        max_nash_contract = a_contract
-    #print("agent1_utility:"+str(agent1_utility))
-    #print("agent2_utility:"+str(agent2_utility))
-
-print("Maximam Nash contract: "+str(max_nash_contract))
-print("Maximam Nash value : "+str(max_nash))
-
-
+mediator = BruteForceMediator(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
+mediator.mediate(agent1,agent2)
 
