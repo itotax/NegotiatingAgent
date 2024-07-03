@@ -123,7 +123,9 @@ print("Length of contract:"+str(len(aContract)))
 agent1.computeUtilityOfAContract(aContract)
 '''
 
-class BruteForceMediator:
+import copy
+
+class Mediator:
 
     def __init__(self,constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min):
         self.constraints_num = constraints_num
@@ -133,7 +135,7 @@ class BruteForceMediator:
         self.constraint_value_max = constraint_value_max
         self.constraint_value_min = constraint_value_min
 
-    def mediate(self, agent1, agent2):
+    def bruteforce_mediate(self, agent1, agent2):
         ####  単純な全探索 #####
         # Brute Force mediator
         # 全てのcontractポイントを計算(pythonの関数productを使って、全ての組み合わせを計算)
@@ -160,6 +162,60 @@ class BruteForceMediator:
         print("Maximam Nash contract: "+str(max_nash_contract))
         print("Maximam Nash value : "+str(max_nash))
 
+    def localsearch_mediate(self, agent1, agent2):
+        ####  ローカルサーチ ####
+        # 初期コントラクト
+        aCurrentList = []
+        for k in range(self.issues_num):
+              x = random.randint(self.issue_value_min, self.issue_value_max)
+              aCurrentList.append(x)
+
+        for i in range(1000):
+            # ***** 1) get neighbors *****
+            # ex.
+            # [3,2,5]
+            # それぞれに1を足したもの-> [4,2,5],[3,3,5],[3,2,6]
+            # それぞれから1を引いたもの-> [2,2,5],[3,1,5],[3,2,4]
+            # を作る
+            neighbor_list = []
+            for i in range(self.issues_num):
+                new_list = copy.deepcopy(aCurrentList)
+                if(new_list[i] < self.issue_value_max):
+                    new_list[i] = new_list[i] + 1
+                neighbor_list.append(new_list)
+
+            for i in range(self.issues_num):
+                new_list = copy.deepcopy(aCurrentList)
+                if(new_list[i] > self.issue_value_min):
+                    new_list[i] = new_list[i] - 1
+                neighbor_list.append(new_list)
+
+            #print(neighbor_list)
+
+            # ***** 2) find the max neighbor *****
+            agent1_utility = agent1.computeUtilityOfAContract(aCurrentList)
+            agent2_utility = agent2.computeUtilityOfAContract(aCurrentList)
+            aCurrentUtility = agent1_utility * agent2_utility
+            max_nash = aCurrentUtility
+            max_nash_contract = aCurrentList
+
+            for a_contract in neighbor_list:
+                agent1_utility = agent1.computeUtilityOfAContract(a_contract)
+                agent2_utility = agent2.computeUtilityOfAContract(a_contract)
+                a_nash = agent1_utility * agent2_utility
+                #print(str(a_contract)+":"+str(a_nash))
+                if max_nash < a_nash:
+                    max_nash = a_nash
+                    max_nash_contract = a_contract
+                #print("agent1_utility:"+str(agent1_utility))
+                #print("agent2_utility:"+str(agent2_utility))
+        
+            # ***** 3) move to the max neighbor *****
+            aCurrentList = max_nash_contract
+            aCurrentUtility = max_nash
+            print("Current contract: "+str(aCurrentList))
+            print("Current utility : "+str(aCurrentUtility))
+
 
 ### 環境設定 ###
 from itertools import product
@@ -172,6 +228,7 @@ constraint_value_min = 0
 agent1 = Agent(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
 agent2 = Agent(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
 
-mediator = BruteForceMediator(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
-mediator.mediate(agent1,agent2)
+mediator = Mediator(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
+#mediator.bruteforce_mediate(agent1,agent2)
+mediator.localsearch_mediate(agent1,agent2)
 
