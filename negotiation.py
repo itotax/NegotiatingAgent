@@ -137,7 +137,7 @@ class BruteForceMediator:
         ####  単純な全探索 #####
         # Brute Force mediator
         # 全てのcontractポイントを計算(pythonの関数productを使って、全ての組み合わせを計算)
-        a_List = list(range(self.issue_value_min,self.issue_value_max))
+        a_List = list(range(self.issue_value_min,self.issue_value_max+1))
         all_contracts = product(a_List,repeat=self.issues_num) # -> iteratorを返す
         #list(all_contract)をすると、iteratorを使い切ってしまう。listにしておくか、iteratorをそのまま使うかにしないといけません。
         #この次に以下をやると空リストが返される
