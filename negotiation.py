@@ -1,5 +1,6 @@
 import random
 from functools import reduce
+from functools import lru_cache
 
 # Constraintクラスの実装
 class Constraint:
@@ -7,6 +8,8 @@ class Constraint:
         self.id = id
         self.issues = issues
         self.value = value
+
+#    @lru_cache(maxsize=None)
     def satisfy(self, aContract):
         self.id = id
         #Ex aContract = [1,3,4]
@@ -135,7 +138,11 @@ class Mediator:
         self.constraint_value_max = constraint_value_max
         self.constraint_value_min = constraint_value_min
 
+    ###################
+    # 単純な全探索 
+    ###################
     def bruteforce_mediate(self, agent1, agent2):
+        print("Brute force enumeration")
         ####  単純な全探索 #####
         # Brute Force mediator
         # 全てのcontractポイントを計算(pythonの関数productを使って、全ての組み合わせを計算)
@@ -146,23 +153,44 @@ class Mediator:
         #print(list(all_contracts))  # => これは空のリストになる (iteratorが周り切っちゃったから)
         max_nash = 0
         max_nash_contract = []
+        i = 0
         for a_contract in all_contracts:
             #print(a_contract)
             agent1_utility = agent1.computeUtilityOfAContract(a_contract)
             agent2_utility = agent2.computeUtilityOfAContract(a_contract)
             a_nash = agent1_utility * agent2_utility
-            print("{:>20} : {:>20}".format(str(a_contract),str(a_nash)))
+            #print("{:>20} : {:>20}".format(str(a_contract),str(a_nash)))
+            #print(".",end="",flush=True)
             #print(str(a_contract)+":"+str(a_nash))
             if max_nash < a_nash:
                 max_nash = a_nash
                 max_nash_contract = a_contract
             #print("agent1_utility:"+str(agent1_utility))
             #print("agent2_utility:"+str(agent2_utility))
-
+            i = i + 1
+            if i % 100 == 0:
+                print(".",end="",flush=True)
         print("Maximam Nash contract: "+str(max_nash_contract))
         print("Maximam Nash value : "+str(max_nash))
 
+    ###################
+    ## 複数のローカルサーチを使って、最適な契約を見つける
+    ###################
     def localsearch_mediate(self, agent1, agent2):
+        print("multi start local search")
+        max_contract = []
+        max_utility = 0
+        for i in range(5):
+            aSearchedContract,aSearchedContractUtility = self.localsearch(agent1,agent2)
+            print("aSearchedContract: "+str(aSearchedContract))
+            print("aSearchedContractUtility : "+str(aSearchedContractUtility))
+            if max_utility < aSearchedContractUtility:
+                max_contract = aSearchedContract
+                max_utility = aSearchedContractUtility
+        print("Max Contract:"+str(max_contract))
+        print("Max Utility:"+str(max_utility))
+    
+    def localsearch(self,agent1,agent2):
         ####  ローカルサーチ ####
         # 初期コントラクト
         aCurrentList = []
@@ -170,7 +198,8 @@ class Mediator:
               x = random.randint(self.issue_value_min, self.issue_value_max)
               aCurrentList.append(x)
 
-        for i in range(1000):
+        ## 20回繰り返す
+        for i in range(20):
             # ***** 1) get neighbors *****
             # ex.
             # [3,2,5]
@@ -213,13 +242,15 @@ class Mediator:
             # ***** 3) move to the max neighbor *****
             aCurrentList = max_nash_contract
             aCurrentUtility = max_nash
-            print("Current contract: "+str(aCurrentList))
-            print("Current utility : "+str(aCurrentUtility))
+            print("Current contract{:>20} : Current utility{:>20}".format(str(aCurrentList),str(aCurrentUtility)))
+            #print("Current contract: "+str(aCurrentList))
+            #print("Current utility : "+str(aCurrentUtility))
+        return aCurrentList, aCurrentUtility
 
 
 ### 環境設定 ###
 from itertools import product
-constraints_num = 10000 # for each
+constraints_num = 1000 # for each
 issues_num  = 5
 issue_value_max = 10
 issue_value_min = 0
@@ -229,6 +260,6 @@ agent1 = Agent(constraints_num,issues_num,issue_value_max,issue_value_min,constr
 agent2 = Agent(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
 
 mediator = Mediator(constraints_num,issues_num,issue_value_max,issue_value_min,constraint_value_max,constraint_value_min)
-#mediator.bruteforce_mediate(agent1,agent2)
 mediator.localsearch_mediate(agent1,agent2)
+mediator.bruteforce_mediate(agent1,agent2)
 
